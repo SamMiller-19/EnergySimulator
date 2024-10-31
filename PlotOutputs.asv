@@ -1,0 +1,26 @@
+function PlotOutputs(Exports,instantBatteryPower,batteryCapacity,solGeneratoin,winGeneration,Load);
+    %Get the sums of everything so we have to turn them all into matrices
+    
+    [rows cols]=size(Load);
+
+    mExports=Exports{:,2:cols};
+    minstantBatteryPower=instantBatteryPower{:,2:cols};
+    mbatteryCapacity=batteryCapacity{:,2:cols};
+    msolGeneratoin=solGeneratoin{:,2:cols};
+    winGeneration=winGeneration{:,2:cols};
+    mLoad=Load{:,2:cols};
+    Dates=Load{:,1};
+
+    sumExports=sum(mExports,2);
+    suminstantBatteryPower=sum(minstantBatteryPower,2);
+    sumExports=sum(mExports,2);
+    sumExports=sum(mExports,2);
+    sumExports=sum(mExports,2);
+    sumExports=sum(mExports,2);
+    sumExports=sum(mExports,2);
+    
+
+    
+    area()
+end
+

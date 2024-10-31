@@ -1,0 +1,26 @@
+
+%Takes 2 tables, one with a list of time series and one with a list of
+%multipliers and multiplies them by corresponding values. Must match
+function TotalGeneration = factorToPower(GenerationTseries, PeakProduction)
+    %Find the number of columns
+    [~, Columns]=size(PeakProduction);
+    
+    %Initialize the PeakProduction table
+
+    %First make the table with the date information filled in 
+    TotalGeneration = GenerationTseries(:,1);
+
+    %Starting at 2 cause date inf is already filled
+    i=1;
+    while i <= Columns
+        name=PeakProduction.Properties.VariableNames{i};
+        %Check if it exists
+        if (ismember(name,GenerationTseries.Properties.VariableNames))
+            %Make a new column with the corresponding nam and fill it with 
+            % the PeakProduction* the Tseries
+            TotalGeneration.(name)=PeakProduction{:,i}*GenerationTseries{:,i};
+            i1;
+
+        end 
+    end
+end
