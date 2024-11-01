@@ -1,13 +1,15 @@
-function [Exports,instantBatteryPower,batteryCapacity,minimumCapacity] = SolveLoadBalancing(solGeneration,winGeneration,Load,StartCapacity,maxCapacity)
+function [Exports,instantBatteryPower,batteryCapacity,unusedPower,unmetDemand] = SolveLoadBalancing(solGeneration,winGeneration,Load,StartCapacity,maxCapacity)
     %Get the size of the Load since thi sis generally useful
     [rows,cols]=size(Load);
 
     %Define some empty arrays for preprossesing
     Exports=zeros([rows cols-1]);
+    unusedPower=zeros([rows cols-1]);
+    unmetDemand=zeros([rows cols-1]);
 
     solGenerationData=table2array(solGeneration(:,2:cols));
     winGenerationData=table2array(winGeneration(:,2:cols));
-    LoadGenerationData=table2array(Load(:,2:cols));
+    LoadData=table2array(Load(:,2:cols));
 
     %We can now find the total sums of generation and Load at a given
 
@@ -17,42 +19,57 @@ function [Exports,instantBatteryPower,batteryCapacity,minimumCapacity] = SolveLo
 
 
 
-    %Find the instanteneous demand at a given time
-    netPowerBefore=solGenerationData+winGenerationData-LoadGenerationData;
+    %Find the instanteneous demand at a time
+    netPowerBefore=solGenerationData+winGenerationData-LoadData;
+
     %Demand of the whole system at each time step
     systemNetPower=sum(netPowerBefore,2);
 
+    %Initialize the power after
+    netPowerAfter=netPowerBefore;
     
     for i=1:cols-1
+        %Weighted power afterwards transmission
+        netPowerAfter(:,i)=systemNetPower*sum(LoadData(:,i))/sum(LoadData,"all");
+
         %Split the amount of excess between everyone dependant on their net
         %load
-        Exports(:,i)=(netPowerBefore(:,i)-systemNetPower)*sum(LoadGenerationData(:,i))/sum(LoadGenerationData,"all");
+        Exports(:,i)=netPowerAfter(:,i)-netPowerBefore(:,i);
     end
     
     %Now we actually can find out how much battery power we use (positive
     %means battery is producing)
-    instantBatteryPower=-(netPowerBefore-Exports);
-
-    minimumCapacity(1,1:cols-1)=StartCapacity;
-    batteryCapacity=zeros(rows,cols-1);
-    tempCapacity=StartCapacity;
-
+    instantBatteryPower=-netPowerAfter;
+    
+    batteryCapacity(1,:)=StartCapacity;
+    
+    
     %Go through and calculate the storage at each row
-    for i=1:rows
-        tempCapacity=tempCapacity-instantBatteryPower(i,:);
+    for i=2:rows
+        batteryCapacity(i,:)=batteryCapacity(i-1,:)+netPowerAfter(i,:);
+        %unused power is actually being sumed over time
+        unusedPower(i,:)=unusedPower(i-1,:);
+        unmetDemand(i,:)=unmetDemand(i-1,:);
+
         %Can't exceed max capacity
+
         for j=1:cols-1
-            if tempCapacity(j)>maxCapacity
-                tempCapacity(j)=maxCapacity;
-            elseif(minimumCapacity(j)>tempCapacity(j))
-                minimumCapacity(j)=tempCapacity(j);
+            %Check if the demand is met just by what's
+            if batteryCapacity(i,j)>maxCapacity(j)
+                %Have unusedPower as a sum accross time
+                unusedPower(i,j)=unusedPower(i,j)+batteryCapacity(i,j)-maxCapacity(j);
+                batteryCapacity(i,j)=maxCapacity(j);
+
+                instantBatteryPower(i,j)=batteryCapacity(i-1,j)-maxCapacity(j);
+            elseif(0>batteryCapacity(i,j))
+                unmetDemand(i,j)=unmetDemand(i,j)-batteryCapacity(i,j);
+                instantBatteryPower(i,j)=batteryCapacity(i-1,j);
+                batteryCapacity(i,j)=0;
             end
 
         end
         %Store how much is stored at a given time
-        batteryCapacity(i,:)=tempCapacity;
     end
-
     %Now we just need to convert back to tables
     Date=Load.Date;
 
@@ -65,6 +82,13 @@ function [Exports,instantBatteryPower,batteryCapacity,minimumCapacity] = SolveLo
 
     batteryCapacity=array2table(batteryCapacity, "VariableNames", regionNames);
     batteryCapacity=addvars(batteryCapacity,Date,'Before',1);
+
+    unusedPower=array2table(unusedPower, "VariableNames", regionNames);
+    unusedPower=addvars(unusedPower,Date,'Before',1);
+
+    unmetDemand=array2table(unmetDemand, "VariableNames", regionNames);
+    unmetDemand=addvars(unmetDemand,Date,'Before',1);
+
 
 
 

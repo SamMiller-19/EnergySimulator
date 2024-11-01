@@ -36,16 +36,17 @@ function AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacit
     %Get the size just for displaying
     [rows, columns]=size(solGeneration);
 
-    fprintf('%d MWh of Battery Capacity at start of sim \n',round(sum(startCapacity)))
-    fprintf('%d MWh of Battery Capacity at end of sim\n', round(sum(batteryCapacity{rows,2:7},2)))
+    disp('%d MWh of Battery Capacity at start of sim \n',sum(startCapacity))
+    disp('%d MWf of Battery Capacity at end of sim', sum(batteryCapacity{rows,2:7},2))
     
 
-    fprintf('maximum battery capacity of the system is set to %d MWh\n',round(sum(maxCapacity)))
+    disp('maximum battery capacity of the system is%d MWh'sum(maxCapacity))
 
-    fprintf('Maximum import/export from any location at any time is %d MWh\n',round(max(max(abs(Exports{:,2:7})))))
+    disp('Maximum import/export at any time w')
+    max(max(abs(Exports{:,2:7})))
 
-    fprintf('Total Unused Power is %d MWh\n',round(sum(unusedPower{rows,2:7},2)))
-    
+    disp('Total Unused Power')
+    sum(unusedPower{rows,2:7},2)
 end
 
 
