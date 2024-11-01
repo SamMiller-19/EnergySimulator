@@ -30,8 +30,11 @@ function PlotOutputs(solGeneration,winGeneration,Load,instantBatteryPower,batter
 
 
     %=========================Here's where we actually start plotting=============================
+    
+    
     clf
     fig =figure('Name','Alberta');
+    set(fig, 'WindowStyle', 'Docked');
 
     layout=tiledlayout(2,2);
     title(layout,'All of Alberta') 

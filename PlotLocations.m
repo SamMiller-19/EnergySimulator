@@ -12,6 +12,7 @@ function PlotLocations(column,solGeneration,winGeneration,Load,instantBatteryPow
     Dates=Load{:,1};
 
     fig =figure('Name',name);
+    set(fig, 'WindowStyle', 'Docked');
 
     layout=tiledlayout(2,2);
     title(layout,'All of Alberta') 
