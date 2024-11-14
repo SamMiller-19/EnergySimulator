@@ -7,10 +7,10 @@ regionNames= ["Calgary", "Central", "Edmonton", "NorthEast", "NorthWest","South"
     %comment to remove them
     
     
-    winCalgary = 4000;
-    winCentral = 4000;
+    winCalgary = 3000;
+    winCentral = 1000;
     winEdmonton = 0;
-    winSouth = 4000;
+    winSouth = 8000;
     winNorthEast = 0;
     winNorthWest = 0;
     
@@ -22,23 +22,23 @@ regionNames= ["Calgary", "Central", "Edmonton", "NorthEast", "NorthWest","South"
     %Set Peak loads for Solar generators kW for all the locations here,
     %comment to remove them
     
-    solCalgary = 4000;
-    solCentral = 4000;
-    solEdmonton = 4000;
+    solCalgary = 3500;
+    solCentral = 3000;
+    solEdmonton = 3000;
     solSouth = 4000;
-    solNorthEast = 4000;
-    solNorthWest = 4000;
+    solNorthEast = 2500;
+    solNorthWest = 2500;
     
     solPeak=[solCalgary solCentral solEdmonton solNorthEast solNorthWest solSouth];
     solPeakTable=array2table(solPeak,"VariableNames",regionNames);
 
 
-    maxCapacityCalgary = 750000;
-    maxCapacityCentral = 750000;
-    maxCapacityEdmonton = 750000;
-    maxCapacityNorthEast = 750000;
-    maxCapacityNorthWest = 750000;
-    maxCapacitySouth = 750000;
+    maxCapacityCalgary = 450000;
+    maxCapacityCentral = 550000;
+    maxCapacityEdmonton = 650000;
+    maxCapacityNorthEast = 300000;
+    maxCapacityNorthWest = 350000;
+    maxCapacitySouth = 350000;
 
     maxCapacity=[maxCapacityCalgary maxCapacityCentral maxCapacityEdmonton maxCapacityNorthEast maxCapacityNorthWest maxCapacitySouth];
 
@@ -55,4 +55,4 @@ regionNames= ["Calgary", "Central", "Edmonton", "NorthEast", "NorthWest","South"
         startCapacityNorthWest*maxCapacityNorthWest, startCapacitySouth*maxCapacitySouth];
 
    
-    AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacity)
+    AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacity,0)

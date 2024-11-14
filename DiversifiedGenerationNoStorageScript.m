@@ -7,27 +7,27 @@ regionNames= ["Calgary", "Central", "Edmonton", "NorthEast", "NorthWest","South"
     %comment to remove them
     
     
-    winCalgary = 5000;
-    winCentral = 5000;
+    winCalgary = 4000;
+    winCentral = 4000;
     winEdmonton = 0;
-    winSouth = 5000;
+    winSouth = 4500;
     winNorthEast = 0;
     winNorthWest = 0;
     
     %Make a wind data array, and turn it into an array
-    winPeak=[winSouth winCalgary winCentral winEdmonton winNorthEast winNorthWest];
+    winPeak=[winCalgary winCentral winEdmonton winNorthEast winNorthWest winSouth];
     winPeakTable=array2table(winPeak,"VariableNames",regionNames);
     
     
     %Set Peak loads for Solar generators kW for all the locations here,
     %comment to remove them
     
-    solCalgary = 5500;
-    solCentral = 5500;
-    solEdmonton = 5500;
-    solSouth = 5500;
-    solNorthEast = 5500;
-    solNorthWest = 5500;
+    solCalgary = 4000;
+    solCentral = 4000;
+    solEdmonton = 4000;
+    solSouth = 4000;
+    solNorthEast = 4000;
+    solNorthWest = 4000;
     
     solPeak=[solCalgary solCentral solEdmonton solNorthEast solNorthWest solSouth];
     solPeakTable=array2table(solPeak,"VariableNames",regionNames);
@@ -53,4 +53,4 @@ regionNames= ["Calgary", "Central", "Edmonton", "NorthEast", "NorthWest","South"
 
     
    
-    AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacity)
+    AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacity,0)

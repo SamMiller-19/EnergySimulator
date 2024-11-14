@@ -53,4 +53,4 @@ regionNames= ["Calgary", "Central", "Edmonton", "NorthEast", "NorthWest","South"
 
     
    
-    AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacity)
+    AlbertaGridModelling(winPeakTable,solPeakTable,startCapacity,maxCapacity,0)

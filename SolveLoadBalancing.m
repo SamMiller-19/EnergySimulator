@@ -1,4 +1,4 @@
-function [Exports,instantBatteryPower,batteryCapacity,unusedPower,unmetDemand] = SolveLoadBalancing(solGeneration,winGeneration,Load,StartCapacity,maxCapacity)
+function [Exports,instantBatteryPower,batteryCapacity,HydroGeneration,unusedPower,unmetDemand] = SolveLoadBalancing(solGeneration,winGeneration,HydroCapacity,Load,StartCapacity,maxCapacity)
     %Get the size of the Load since thi sis generally useful
     [rows,cols]=size(Load);
 
@@ -6,11 +6,17 @@ function [Exports,instantBatteryPower,batteryCapacity,unusedPower,unmetDemand] =
     Exports=zeros([rows cols-1]);
     unusedPower=zeros([rows cols-1]);
     unmetDemand=zeros([rows cols-1]);
+    HydroGeneration=zeros([rows cols-1]);
+    netPowerHydro = zeros([rows cols-1]);
+    instantBatteryPower=zeros([rows cols-1]);
+
 
     solGenerationData=table2array(solGeneration(:,2:cols));
     winGenerationData=table2array(winGeneration(:,2:cols));
+    HydroCapacityData=table2array(HydroCapacity(:,2:cols));
     LoadData=table2array(Load(:,2:cols));
 
+    
     %We can now find the total sums of generation and Load at a given
 
 
@@ -20,41 +26,78 @@ function [Exports,instantBatteryPower,batteryCapacity,unusedPower,unmetDemand] =
 
 
     %Find the instanteneous demand at a time
-    netPowerBefore=solGenerationData+winGenerationData-LoadData;
+    netPowerNoHydro=solGenerationData+winGenerationData-LoadData;
 
-    %Demand of the whole system at each time step
-    systemNetPower=sum(netPowerBefore,2);
-
-    %Initialize the power after
-    netPowerAfter=netPowerBefore;
-    
-    for i=1:cols-1
-        %Weighted power afterwards transmission
-        netPowerAfter(:,i)=systemNetPower*sum(LoadData(:,i))/sum(LoadData,"all");
-
-        %Split the amount of excess between everyone dependant on their net
-        %load
-        Exports(:,i)=netPowerAfter(:,i)-netPowerBefore(:,i);
-    end
-    
-    %Now we actually can find out how much battery power we use (positive
-    %means battery is producing)
-    instantBatteryPower=-netPowerAfter;
     
     batteryCapacity(1,:)=StartCapacity;
     
     
     %Go through and calculate the storage at each row
     for i=2:rows
-        batteryCapacity(i,:)=batteryCapacity(i-1,:)+netPowerAfter(i,:);
-        %unused power is actually being sumed over time
+
+        %Just setting the summing variables to previous values
         unusedPower(i,:)=unusedPower(i-1,:);
         unmetDemand(i,:)=unmetDemand(i-1,:);
 
-        %Can't exceed max capacity
 
+        %-------- Hydro Power Processing -------------%
+        %Check to see if the whole system's capacity is exceeded for this
+        %time step if so we add in some hydro power just add it to
+        %netPowerNoHydro as this is the power before balancing but should
+        %include all generation sources except battery
+        if (sum(netPowerNoHydro(i,:))<0)
+            %Then we want to add in hydro power but we need to see if hydro
+            %power meets excess demand
+            if((-sum(netPowerNoHydro(i,:)))>sum(HydroCapacityData(i,:)))
+                %This means we use all the hydro power
+                HydroGeneration(i,:)=HydroCapacityData(i,:);
+            
+            else
+                %If it does meet the demand then we only use enough power
+                %to meet demand
+
+                %Note this is a simplification it is because we are only 
+                %Generating in Calgary, really this should spread it
+                %accross all locations
+                HydroGeneration(i,1)=-sum(netPowerNoHydro(i,:));
+            end
+            %Add the insstant hydro power back to the system
+            netPowerHydro(i,:)=netPowerNoHydro(i,:)+HydroGeneration(i,:);
+            %If we are not needing to use hydro netPowerHydro is just netPower
+            %noHydro
+        else
+            netPowerHydro(i,:)=netPowerNoHydro(i,:);
+        end
+        %--------  End Hydro Power Processing -------------%
+
+
+        %---------- Export and battery processing ------------%
+            
+        
         for j=1:cols-1
-            %Check if the demand is met just by what's
+            %First see what the necessarry battery power is simply by calculating
+            %How much power there is a location by evenly distributing it.
+            %This is weighted somewhat so that more power is sent to
+            %locations with low battery capacity
+            if(sum(netPowerHydro(i,:))<0)
+                instantBatteryPower(i,j)=-(sum(netPowerHydro(i,:)) * batteryCapacity(i-1,j)/sum(batteryCapacity(i-1,:)));
+            else
+                instantBatteryPower(i,j)= -(sum(netPowerHydro(i,:)) * (1-(sum(batteryCapacity(i-1,:))-batteryCapacity(i-1,j))/sum(batteryCapacity(i-1,:))));
+            end
+
+
+
+            %Calculate Exports as the power before - the battery power
+            Exports(i,j) = -(instantBatteryPower(i,j)+netPowerHydro(i,j));
+
+
+            %Now we calaculate the battery capacity given that we
+            %add/subtract the instant battery power
+            batteryCapacity(i,j)=batteryCapacity(i-1,j)-instantBatteryPower(i,j);
+
+
+            %Check if the battery is fully empty or fully fulla nd process
+            %accordingly
             if batteryCapacity(i,j)>maxCapacity(j)
                 %Have unusedPower as a sum accross time
                 unusedPower(i,j)=unusedPower(i,j)+batteryCapacity(i,j)-maxCapacity(j);
@@ -70,6 +113,9 @@ function [Exports,instantBatteryPower,batteryCapacity,unusedPower,unmetDemand] =
         end
         %Store how much is stored at a given time
     end
+    %---------- Export and battery processing ------------%
+
+    
     %Now we just need to convert back to tables
     Date=Load.Date;
 
@@ -83,37 +129,15 @@ function [Exports,instantBatteryPower,batteryCapacity,unusedPower,unmetDemand] =
     batteryCapacity=array2table(batteryCapacity, "VariableNames", regionNames);
     batteryCapacity=addvars(batteryCapacity,Date,'Before',1);
 
+    HydroGeneration=array2table(HydroGeneration, "VariableNames", regionNames);
+    HydroGeneration=addvars(HydroGeneration,Date,'Before',1);
+
     unusedPower=array2table(unusedPower, "VariableNames", regionNames);
     unusedPower=addvars(unusedPower,Date,'Before',1);
 
     unmetDemand=array2table(unmetDemand, "VariableNames", regionNames);
     unmetDemand=addvars(unmetDemand,Date,'Before',1);
 
-
-
-
-    %Now we need to find how the power flows
-%     for i=1:rows
-%         for j=1:cols
-%             %Look for the ones taking power
-%             if totalDemand(i,j)>instantDemandBefore(i)
-%                 toTake=totalDemand(i,j)-instantDemandBefore;
-%                 %Look in the line matrix for the lowest values
-%                 temp=sort(LineMatrix(j,:),'descend')
-%                 for k=1:cols
-%                     if(totalDemand(i,k)<instantDemandBefore(i))
-%                         toGive=totalDemand(i,k)-instantDemandBefore
-%                         if(toGive*LineMatrix(j,k)>toTake)
-%                              
-%                         end
-% 
-%                     end
-%                 end
-% 
-%             end
-%         end
-% 
-%     end
 
 
 
